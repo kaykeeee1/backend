@@ -1,9 +1,7 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-
-const authRoutes = require('./routes/auth.routes');
-const serviceRoutes = require('./routes/service.routes');
+import express from 'express';
+import cors from 'cors';
+import authRoutes from './routes/auth.routes.js';
+import serviceRoutes from './routes/service.routes.js';
 
 const app = express();
 
@@ -13,6 +11,6 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/services', serviceRoutes);
 
-app.listen(process.env.PORT, () => {
-  console.log(`Servidor rodando na porta ${process.env.PORT}`);
+app.listen(3000, () => {
+  console.log('Servidor rodando na porta 3000');
 });

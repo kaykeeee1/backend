@@ -1,21 +1,25 @@
-const pool = require('../config/database');
+import { pool } from '../config/database.js';
 
-exports.create = async (req, res) => {
+export const createService = async (req, res) => {
   const { title, description, category, price } = req.body;
 
-  await pool.query(
-    'INSERT INTO services (title, description, category, price, user_id) VALUES (?, ?, ?, ?, ?)',
-    [title, description, category, price, req.userId]
-  );
+  try {
+    await pool.query(
+      'INSERT INTO services (title, description, category, price) VALUES (?, ?, ?, ?)',
+      [title, description, category, price]
+    );
 
-  res.status(201).json({ message: 'Serviço criado' });
+    res.status(201).json({ message: 'Serviço criado com sucesso' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-exports.list = async (req, res) => {
-  const [rows] = await pool.query(
-    'SELECT * FROM services WHERE user_id = ?',
-    [req.userId]
-  );
-
-  res.json(rows);
+export const getServices = async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM services');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
