@@ -6,7 +6,7 @@ interface Service {
   title: string;
   description: string;
 }
-
+//  akkajaj
 export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
   const [title, setTitle] = useState('');
