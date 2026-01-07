@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../services/api';
+import { api } from '../api/api';
 
 interface Service {
   id: number;
@@ -11,28 +11,82 @@ export default function Services() {
   const [services, setServices] = useState<Service[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // 🔹 LISTAR SERVIÇOS
   async function loadServices() {
-    const response = await api.get('/services');
-    setServices(response.data);
+    try {
+      const response = await api.get('/services');
+      setServices(response.data);
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao carregar serviços');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  async function createService(e: React.FormEvent) {
+  // 🔹 CRIAR OU EDITAR SERVIÇO
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    await api.post('/services', {
-      title,
-      description,
-    });
+    if (!title.trim() || !description.trim()) {
+      alert('Preencha todos os campos');
+      return;
+    }
 
-    setTitle('');
-    setDescription('');
-    loadServices();
+    try {
+      if (editingId !== null) {
+        // EDITAR
+        const response = await api.put(`/services/${editingId}`, {
+          title,
+          description,
+        });
+
+        setServices((prev) =>
+          prev.map((service) =>
+            service.id === editingId ? response.data : service
+          )
+        );
+      } else {
+        // CRIAR
+        const response = await api.post('/services', {
+          title,
+          description,
+        });
+
+        setServices((prev) => [...prev, response.data]);
+      }
+
+      // reset
+      setTitle('');
+      setDescription('');
+      setEditingId(null);
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao salvar serviço');
+    }
   }
 
-  async function deleteService(id: number) {
-    await api.delete(`/services/${id}`);
-    loadServices();
+  // 🔹 EDITAR
+  function handleEdit(service: Service) {
+    setTitle(service.title);
+    setDescription(service.description);
+    setEditingId(service.id);
+  }
+
+  // 🔹 EXCLUIR
+  async function handleDelete(id: number) {
+    if (!window.confirm('Deseja excluir este serviço?')) return;
+
+    try {
+      await api.delete(`/services/${id}`);
+      setServices((prev) => prev.filter((service) => service.id !== id));
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao excluir serviço');
+    }
   }
 
   useEffect(() => {
@@ -40,28 +94,69 @@ export default function Services() {
   }, []);
 
   return (
-    <div>
+    <div
+      style={{
+        maxWidth: 600,
+        margin: '40px auto',
+        padding: 20,
+        border: '1px solid #ccc',
+        borderRadius: 8,
+      }}
+    >
       <h2>Meus Serviços</h2>
 
-      <form onSubmit={createService}>
+      <form onSubmit={handleSubmit}>
         <input
           placeholder="Título"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
+
         <input
           placeholder="Descrição"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <button type="submit">Adicionar</button>
+
+        <button type="submit">
+          {editingId !== null ? 'Atualizar' : 'Adicionar'}
+        </button>
+
+        {editingId !== null && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingId(null);
+              setTitle('');
+              setDescription('');
+            }}
+            style={{ marginLeft: 8 }}
+          >
+            Cancelar
+          </button>
+        )}
       </form>
+
+      {loading && <p>Carregando...</p>}
 
       <ul>
         {services.map((service) => (
           <li key={service.id}>
-            <strong>{service.title}</strong> - {service.description}
-            <button onClick={() => deleteService(service.id)}>Excluir</button>
+            <strong>{service.title}</strong> — {service.description}
+
+            <button
+              onClick={() => handleEdit(service)}
+              style={{ marginLeft: 8 }}
+            >
+              Editar
+            </button>
+
+            <button
+              onClick={() => handleDelete(service.id)}
+              style={{ marginLeft: 4 }}
+            >
+              Excluir
+            </button>
           </li>
         ))}
       </ul>
